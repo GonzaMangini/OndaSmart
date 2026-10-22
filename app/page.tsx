@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 // Página de inicio provisoria (etapa 0).
 // Sirve para comprobar que el deploy en Vercel funciona y para ver la
@@ -21,6 +22,12 @@ export default function Home() {
         Planificador de rutinas de OndaCrossfit. Próximamente: el panel del
         coach y la vista para la TV.
       </p>
+      <Link
+        href="/plan"
+        className="rounded-lg bg-brand px-5 py-3 font-display text-lg font-bold uppercase tracking-wide text-brand-ink hover:bg-brand-strong"
+      >
+        Ver pizarrón de esta semana
+      </Link>
     </main>
   );
 }
