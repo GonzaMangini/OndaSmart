@@ -21,6 +21,14 @@
   --brand-strong: #92cf2c; /* verde más claro para hover/foco */
   --brand-ink: #0e1115; /* texto encima del verde (botones) */
   --danger: #ef4444; /* borrar, errores */
+
+  /* Pizarrón (vista previa y TV): imita la pizarra blanca del gimnasio con
+     marcadores azul, rojo y negro. No cambia con el tema de la app. */
+  --board-bg: #fbfaf6; /* pizarra blanca */
+  --board-ink: #1c1c1e; /* marcador negro: ejercicios y reps */
+  --board-blue: #2350a6; /* marcador azul: letras y encabezados */
+  --board-red: #d22f2b; /* marcador rojo: títulos y notas */
+  --board-tape: #111111; /* cinta negra que separa las columnas */
 }
 
 @theme inline {
@@ -34,6 +42,11 @@
   --color-brand-strong: var(--brand-strong);
   --color-brand-ink: var(--brand-ink);
   --color-danger: var(--danger);
+  --color-board-bg: var(--board-bg);
+  --color-board-ink: var(--board-ink);
+  --color-board-blue: var(--board-blue);
+  --color-board-red: var(--board-red);
+  --color-board-tape: var(--board-tape);
 
   /* Fuentes (cargadas en app/layout.tsx con next/font):
      - font-sans: Barlow, para texto, formularios y prescripciones.
@@ -41,6 +54,10 @@
        nombres de ejercicios en el pizarrón; recuerda al "ONDA" del logo. */
   --font-sans: var(--font-barlow);
   --font-display: var(--font-barlow-condensed);
+  /* - font-marker: Permanent Marker, letra de marcador para el pizarrón.
+       Si se quiere un pizarrón más "prolijo", alcanza con cambiar esta línea
+       por var(--font-barlow-condensed). */
+  --font-marker: var(--font-permanent-marker);
 }
 
 /* Le avisa al navegador que la página es oscura: así las barras de scroll

@@ -31,6 +31,22 @@ export async function saveDay(dayId: string, blocks: Block[]): Promise<SaveResul
   return { ok: true };
 }
 
+/** Guarda el título de un día ("Pecho + Tríceps"). Vacío = sin título ("Día N"). */
+export async function saveDayLabel(dayId: string, label: string): Promise<SaveResult> {
+  const value = label.trim().slice(0, 60) || null;
+
+  const supabase = await createClient();
+  // .select() devuelve las filas cambiadas: si RLS no dejó cambiar nada,
+  // vuelve vacío en vez de dar error, y así nos damos cuenta.
+  const { data, error } = await supabase.from("days").update({ label: value }).eq("id", dayId).select("id");
+
+  if (error || data.length === 0) {
+    console.error("saveDayLabel falló:", error);
+    return { ok: false, error: "No se pudo guardar el título." };
+  }
+  return { ok: true };
+}
+
 /** Crea una semana vacía (con sus días) y recarga la página del editor. */
 export async function createWeek(sectionSlug: string, weekStart: string) {
   if (!isValidIsoDate(weekStart) || !isMonday(weekStart)) {

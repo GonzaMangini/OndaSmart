@@ -8,7 +8,6 @@
 // pestaña no pierde lo que se estaba escribiendo ni corta un autoguardado.
 
 import { useState, type CSSProperties } from "react";
-import { dayTitle } from "@/lib/notation";
 import type { Day } from "@/lib/types";
 import { DayEditor } from "./DayEditor";
 
@@ -30,7 +29,8 @@ export function WeekEditor({ days }: { days: Day[] }) {
               activeDay === index ? "bg-brand text-brand-ink" : "text-muted"
             }`}
           >
-            {dayTitle(day)}
+            {/* "Día N" fijo: el título del día puede ser largo y se edita adentro. */}
+            Día {day.position + 1}
           </button>
         ))}
       </div>

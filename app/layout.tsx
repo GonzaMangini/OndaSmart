@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Barlow, Barlow_Condensed, Permanent_Marker } from "next/font/google";
 import "./globals.css";
 
 // next/font descarga las fuentes en el build y las sirve desde nuestro dominio
@@ -18,6 +18,13 @@ const barlowCondensed = Barlow_Condensed({
   variable: "--font-barlow-condensed",
   subsets: ["latin"],
   weight: ["600", "700", "800"],
+});
+
+// Permanent Marker: letra de marcador para el pizarrón (vista previa y TV).
+const permanentMarker = Permanent_Marker({
+  variable: "--font-permanent-marker",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 // Metadata: Next.js la convierte en etiquetas <title>, <meta>, etc.
@@ -45,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="es-AR">
       <body
-        className={`${barlow.variable} ${barlowCondensed.variable} font-sans antialiased`}
+        className={`${barlow.variable} ${barlowCondensed.variable} ${permanentMarker.variable} font-sans antialiased`}
       >
         {children}
       </body>

@@ -9,14 +9,7 @@
 // campo de reps tiene el foco).
 
 import { useEffect, useRef, useState } from "react";
-import {
-  REPS_SYMBOLS,
-  REST_PRESETS,
-  formatBlockPrescription,
-  formatSingleLine,
-  isSingleLineBlock,
-  normalizeQuotes,
-} from "@/lib/notation";
+import { REPS_SYMBOLS, REST_PRESETS, formatBlockHeading, normalizeQuotes } from "@/lib/notation";
 import type { Direction, EditorBlock, EditorExercise } from "@/lib/editor/blocks";
 import { ArrowDownIcon, ArrowUpIcon, MoreIcon } from "./icons";
 
@@ -87,8 +80,8 @@ export function BlockCard({
     if (last) inputs.current.get(`${last.key}:name`)?.focus();
   }, [block.exercises]);
 
-  // Lo mismo que se va a ver en el pizarrón, calculado con lib/notation.ts.
-  const preview = isSingleLineBlock(block) ? formatSingleLine(block) : formatBlockPrescription(block);
+  // El encabezado que se va a ver en el pizarrón, calculado con lib/notation.ts.
+  const preview = formatBlockHeading(block);
   const isWarmup = block.kind === "warmup";
   const freeText = block.prescriptionOverride !== null;
 
@@ -191,7 +184,7 @@ export function BlockCard({
             className={chipClass(freeText)}
             onClick={() => {
               // Al activar el texto libre arrancamos con lo que se ve hoy, para editar desde ahí.
-              onChange({ prescriptionOverride: freeText ? null : formatBlockPrescription(block) });
+              onChange({ prescriptionOverride: freeText ? null : formatBlockHeading(block) });
               setMenuOpen(false);
             }}
           >
@@ -303,31 +296,21 @@ export function BlockCard({
               className={inputClass}
               value={block.prescriptionOverride ?? ""}
               onChange={(e) => onChange({ prescriptionOverride: normalizeQuotes(e.target.value) })}
-              placeholder="ej. AMRAP 12'"
+              placeholder="ej. O.T.M. / 6R"
             />
           </label>
         ) : (
           <>
             <div className="flex flex-wrap items-end gap-3">
               <RoundsStepper value={block.rounds} onChange={(rounds) => onChange({ rounds })} />
-              {/* La "R" de "x 3R". Apagada → "x 3", como en 4-2-1 x 3. */}
-              <button
-                type="button"
-                aria-pressed={block.roundsSuffix === "R"}
-                onClick={() => onChange({ roundsSuffix: block.roundsSuffix === "R" ? "" : "R" })}
-                className={`h-10 ${chipClass(block.roundsSuffix === "R")}`}
-                title='Mostrar la "R" de rondas'
-              >
-                R
-              </button>
 
               <label className="flex min-w-32 flex-1 flex-col gap-1">
-                <span className="text-xs font-semibold text-muted">Nota del bloque</span>
+                <span className="text-xs font-semibold text-muted">Nota del bloque (va en rojo)</span>
                 <input
                   className={inputClass}
                   value={block.note ?? ""}
                   onChange={(e) => onChange({ note: normalizeQuotes(e.target.value) })}
-                  placeholder="ej. (liviano)"
+                  placeholder="ej. Muy pesado!!!"
                 />
               </label>
             </div>

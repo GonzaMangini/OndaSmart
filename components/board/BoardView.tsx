@@ -1,20 +1,21 @@
-// Pizarrón: dibuja los días de una semana como en el pizarrón del gimnasio.
+// Pizarrón: dibuja los días de una semana como la pizarra blanca del gimnasio.
+//
+//   PECHO + TRÍCEPS                    ← título del día (rojo, subrayado)
+//   E/C: 3 Rounds c/2' P               ← encabezado del bloque (azul, subrayado)
+//   "T" c/DB's      ] 12
+//   Plancha alta    ] 30''
+//   Ⓐ 4 Rounds c/2' P
+//   Pecho plano     ] 1 a 2   MUY PESADO!!!   ← nota del bloque (rojo)
 //
 // Es un componente "puro": recibe datos y los muestra. No lee la base, no
 // sabe si hay alguien logueado y no tiene estado. Por eso lo pueden usar
 // tanto la vista previa del coach como (más adelante) la TV.
 //
-// Todo el texto de la notación sale de lib/notation.ts. La única excepción es
-// la nota de cada ejercicio, que se dibuja aparte para poder darle otro estilo.
+// El texto del encabezado sale de lib/notation.ts. Los colores (board-*) y la
+// letra de marcador (font-marker) están definidos en app/globals.css.
 
 import type { CSSProperties } from "react";
-import {
-  blockLabels,
-  dayTitle,
-  formatBlockPrescription,
-  formatSingleLine,
-  isSingleLineBlock,
-} from "@/lib/notation";
+import { blockLabels, dayTitle, formatBlockHeading } from "@/lib/notation";
 import type { Block, Day } from "@/lib/types";
 
 interface BoardViewProps {
@@ -23,16 +24,17 @@ interface BoardViewProps {
 
 export function BoardView({ days }: BoardViewProps) {
   return (
-    // En celular las columnas van una debajo de la otra. Desde pantallas
-    // grandes (lg) van lado a lado, tantas como días tenga la sección.
-    // La cantidad llega como variable CSS (--cols) porque Tailwind no puede
-    // generar clases a partir de valores que solo se conocen al ejecutar.
+    // En celular las columnas van una debajo de la otra, cada una como una
+    // pizarra. Desde pantallas grandes (lg) van lado a lado sobre una sola
+    // pizarra, separadas por "cinta negra" (divide-x). La cantidad de columnas
+    // llega como variable CSS (--cols) porque Tailwind no puede generar clases
+    // a partir de valores que solo se conocen al ejecutar.
     <div
-      className="grid grid-cols-1 gap-6 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] lg:gap-0 lg:divide-x-2 lg:divide-line"
+      className="grid grid-cols-1 gap-4 font-marker text-board-ink lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] lg:gap-0 lg:divide-x-[10px] lg:divide-board-tape lg:overflow-hidden lg:rounded-lg lg:bg-board-bg lg:shadow-[0_0_0_10px_var(--board-tape)]"
       style={{ "--cols": days.length } as CSSProperties}
     >
       {days.map((day) => (
-        <DayColumn key={day.position} day={day} />
+        <DayColumn key={day.id} day={day} />
       ))}
     </div>
   );
@@ -42,15 +44,15 @@ function DayColumn({ day }: { day: Day }) {
   const labels = blockLabels(day.blocks);
 
   return (
-    <section className="rounded-xl bg-surface p-4 lg:rounded-none lg:bg-transparent lg:px-6 lg:py-2">
-      <h2 className="mb-4 font-display text-sm font-semibold uppercase tracking-widest text-muted">
+    <section className="rounded-lg bg-board-bg px-5 py-5 lg:rounded-none lg:px-7 lg:py-6">
+      <h2 className="mb-5 text-2xl uppercase tracking-wide text-board-red underline decoration-2 underline-offset-[6px] lg:text-3xl 2xl:text-4xl">
         {dayTitle(day)}
       </h2>
 
       {day.blocks.length === 0 ? (
-        <p className="text-muted">Sin bloques cargados.</p>
+        <p className="text-lg text-board-ink/40">Sin bloques cargados.</p>
       ) : (
-        <ol className="flex flex-col gap-5 lg:gap-7">
+        <ol className="flex flex-col gap-5 lg:gap-6 2xl:gap-8">
           {day.blocks.map((block, index) => (
             <li key={index}>
               <BlockRow block={block} label={labels[index]} />
@@ -63,83 +65,79 @@ function DayColumn({ day }: { day: Day }) {
 }
 
 function BlockRow({ block, label }: { block: Block; label: string }) {
-  const singleLine = isSingleLineBlock(block);
-  const prescription = formatBlockPrescription(block);
-  const rowCount = Math.max(block.exercises.length, 1);
+  const heading = formatBlockHeading(block);
+  const isWarmup = block.kind === "warmup";
 
   return (
-    <div className="flex items-center gap-3">
-      <BlockLabel label={label} isWarmup={block.kind === "warmup"} />
-
-      {/*
-        Grilla de 3 columnas: nombres | corchete | reps.
-        El corchete ocupa todas las filas (gridRow: span N), así abraza a
-        todos los ejercicios del bloque como en el pizarrón.
-      */}
-      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_0.5rem_auto] items-center gap-x-2 gap-y-1">
-        {block.exercises.map((exercise, i) => (
-          <div key={i} className="contents">
-            <span
-              className="font-display text-lg font-bold uppercase leading-tight lg:text-xl 2xl:text-2xl"
-              style={{ gridColumn: 1, gridRow: i + 1 }}
-            >
-              {exercise.name}
-              {/* La nota ("alter", "(3:1)") va en minúscula y gris: es una aclaración, no parte del nombre. */}
-              {exercise.note && (
-                <span className="ml-1.5 font-sans text-sm font-medium normal-case text-muted lg:text-base">
-                  {exercise.note}
-                </span>
-              )}
-            </span>
-            {!singleLine && (
-              <span
-                className="text-right font-semibold tabular-nums lg:text-lg 2xl:text-xl"
-                style={{ gridColumn: 3, gridRow: i + 1 }}
-              >
-                {exercise.reps}
-              </span>
-            )}
-          </div>
-        ))}
-
-        {/* El corchete: borde arriba, abajo y a la derecha. */}
-        <span
-          aria-hidden
-          className="h-full min-h-6 self-stretch rounded-r-sm border-y-2 border-r-2 border-brand"
-          style={{ gridColumn: 2, gridRow: `1 / span ${rowCount}` }}
-        />
-
-        {/* Bloque de un solo ejercicio: reps y prescripción en la misma línea. */}
-        {singleLine && (
-          <span
-            className="font-semibold whitespace-nowrap lg:text-lg 2xl:text-xl"
-            style={{ gridColumn: 3, gridRow: 1 }}
-          >
-            {formatSingleLine(block)}
+    <div className="flex flex-col gap-1.5">
+      {/* Encabezado: letra (o "E/C:") + rondas y pausa, en azul y subrayado */}
+      <div className="flex items-center gap-2.5 text-board-blue">
+        {isWarmup ? (
+          <span className="text-xl lg:text-2xl 2xl:text-3xl">E/C:</span>
+        ) : (
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[2.5px] border-board-blue text-lg leading-none lg:size-10 lg:text-xl 2xl:size-12 2xl:text-2xl">
+            {label}
+          </span>
+        )}
+        {heading && (
+          <span className="text-xl underline decoration-2 underline-offset-[6px] lg:text-2xl 2xl:text-3xl">
+            {heading}
           </span>
         )}
       </div>
 
-      {/* Bloques de varios ejercicios: la prescripción va a la derecha del corchete, centrada. */}
-      {!singleLine && prescription && (
-        <span className="font-semibold whitespace-nowrap lg:text-lg 2xl:text-xl">{prescription}</span>
-      )}
+      {block.exercises.length > 0 && <ExerciseList block={block} />}
     </div>
   );
 }
 
-/** Letra del bloque en un círculo verde; el E/C va sin círculo, como en el pizarrón. */
-function BlockLabel({ label, isWarmup }: { label: string; isWarmup: boolean }) {
-  if (isWarmup) {
-    return (
-      <span className="w-10 shrink-0 text-center font-display text-lg font-extrabold text-brand lg:text-xl">
-        {label}
-      </span>
-    );
-  }
+/** Ejercicios con su corchete y reps; a la derecha, la nota del bloque en rojo. */
+function ExerciseList({ block }: { block: Block }) {
+  const note = block.note?.trim();
+
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-brand font-display text-xl font-extrabold text-brand lg:text-2xl">
-      {label}
-    </span>
+    <div className="flex items-center gap-4">
+      {/*
+        Grilla de 3 columnas: nombres | corchete | reps.
+        La primera columna mide lo que el nombre más largo ("auto"), así el
+        corchete queda pegado a los nombres como en el pizarrón. El corchete
+        ocupa todas las filas (gridRow: span N) para abrazar a todo el bloque.
+      */}
+      <div className="grid min-w-0 grid-cols-[minmax(0,auto)_0.6rem_auto] items-center gap-x-2.5 gap-y-1">
+        {block.exercises.map((exercise, i) => (
+          <div key={i} className="contents">
+            <span
+              className="text-lg leading-snug lg:text-xl 2xl:text-2xl"
+              style={{ gridColumn: 1, gridRow: i + 1 }}
+            >
+              {exercise.name}
+              {/* Nota del ejercicio ("alter", "(3:1)"): más chica y en rojo. */}
+              {exercise.note && (
+                <span className="ml-2 text-base text-board-red lg:text-lg">{exercise.note}</span>
+              )}
+            </span>
+            <span
+              className="whitespace-nowrap text-lg tabular-nums lg:text-xl 2xl:text-2xl"
+              style={{ gridColumn: 3, gridRow: i + 1 }}
+            >
+              {exercise.reps}
+            </span>
+          </div>
+        ))}
+
+        {/* El corchete: borde arriba, abajo y a la derecha, en "marcador" negro. */}
+        <span
+          aria-hidden
+          className="h-full min-h-7 self-stretch rounded-r-[3px] border-y-[2.5px] border-r-[2.5px] border-board-ink"
+          style={{ gridColumn: 2, gridRow: `1 / span ${block.exercises.length}` }}
+        />
+      </div>
+
+      {note && (
+        <span className="max-w-[40%] text-lg uppercase leading-tight text-board-red -rotate-3 lg:text-xl 2xl:text-2xl">
+          {note}
+        </span>
+      )}
+    </div>
   );
 }

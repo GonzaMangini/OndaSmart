@@ -2,11 +2,11 @@
 
 // Editor de UN día (una columna del pizarrón).
 //
-// Acá vive el estado: la lista de bloques del día. Cada cambio en una
-// BlockCard actualiza esta lista, y useAutosave la manda a la base sola.
+// Acá vive el estado: el título del día y la lista de bloques. Cada cambio en
+// una BlockCard actualiza esta lista, y useAutosave la manda a la base sola.
 
 import { useCallback, useState } from "react";
-import { saveDay } from "@/app/plan/actions";
+import { saveDay, saveDayLabel } from "@/app/plan/actions";
 import { BlockCard } from "./BlockCard";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 import {
@@ -24,10 +24,18 @@ import {
   updateExercise,
   type EditorBlock,
 } from "@/lib/editor/blocks";
-import { blockLabels, dayTitle } from "@/lib/notation";
+import { blockLabels } from "@/lib/notation";
 import type { Day } from "@/lib/types";
 
+/** Orden de "gravedad" de los estados: si uno de los dos guardados falla, se muestra el error. */
+const STATUS_PRIORITY: SaveStatus[] = ["error", "saving", "pending", "saved"];
+
 export function DayEditor({ day }: { day: Day }) {
+  // Título del día ("Pecho + Tríceps"). Se guarda aparte de los bloques.
+  const [label, setLabel] = useState(day.label ?? "");
+  const saveLabel = useCallback(async (value: string) => (await saveDayLabel(day.id, value)).ok, [day.id]);
+  const labelSave = useAutosave(label, saveLabel);
+
   // La función dentro de useState solo corre en el primer render:
   // convierte los bloques de la base en bloques del editor (con keys).
   const [blocks, setBlocks] = useState<EditorBlock[]>(() => toEditorBlocks(day.blocks));
@@ -38,16 +46,35 @@ export function DayEditor({ day }: { day: Day }) {
     async (value: EditorBlock[]) => (await saveDay(day.id, value)).ok,
     [day.id],
   );
-  const { status, retry } = useAutosave(blocks, save);
+  const blocksSave = useAutosave(blocks, save);
+
+  // Un solo indicador para los dos guardados (título y bloques).
+  const status = STATUS_PRIORITY.find((s) => s === labelSave.status || s === blocksSave.status) ?? "saved";
+  const retry = () => {
+    if (labelSave.status === "error") labelSave.retry();
+    if (blocksSave.status === "error") blocksSave.retry();
+  };
 
   const labels = blockLabels(blocks);
 
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-display text-xl font-bold uppercase tracking-wide">{dayTitle(day)}</h2>
+        <h2 className="font-display text-sm font-bold uppercase tracking-widest text-muted">
+          Día {day.position + 1}
+        </h2>
         <SaveIndicator status={status} onRetry={retry} />
       </div>
+
+      {/* Título de la columna en el pizarrón (va en rojo, arriba de todo). */}
+      <input
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        maxLength={60}
+        placeholder="Título del día (ej. Pecho + Tríceps)"
+        aria-label={`Título del día ${day.position + 1}`}
+        className="rounded-xl border border-line bg-surface px-4 py-3 font-display text-xl font-bold uppercase tracking-wide outline-none placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:normal-case placeholder:tracking-normal placeholder:text-muted/60 focus:border-brand"
+      />
 
       {blocks.length === 0 && (
         <p className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-muted">

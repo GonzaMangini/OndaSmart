@@ -1,5 +1,5 @@
-// Notación del pizarrón: convierte los datos de un bloque en el texto que se
-// escribe a la derecha del corchete ("x 3R (1' P)").
+// Notación del pizarrón: convierte los datos de un bloque en el encabezado que
+// se escribe junto a la letra ("Ⓐ 4 Rounds c/2' P").
 //
 // Es el ÚNICO lugar donde vive el formato: lo usan la vista previa, el editor
 // y (más adelante) la TV. Si mañana el pizarrón cambia de formato, se toca acá.
@@ -7,7 +7,7 @@
 // Son funciones puras (mismo input → mismo output, sin efectos), por eso se
 // testean fácil: ver notation.test.ts.
 
-import type { Block, BlockExercise, Day } from "./types";
+import type { Block, Day } from "./types";
 
 /** Limpia espacios y convierte "" en null, para tratar igual "vacío" y "no cargado". */
 function clean(text: string | null | undefined): string | null {
@@ -55,63 +55,38 @@ export function blockLabels(blocks: Pick<Block, "kind">[]): string[] {
   });
 }
 
-/** Título de la columna: la etiqueta propia o "Día N". */
+/** Título de la columna: la etiqueta propia ("Pecho + Tríceps") o "Día N". */
 export function dayTitle(day: Pick<Day, "position" | "label">): string {
   return clean(day.label) ?? `Día ${day.position + 1}`;
 }
 
+/** Rondas: 4 → "4 Rounds"; 1 → "1 Round". */
+export function formatRounds(rounds: number | null): string | null {
+  if (rounds === null || rounds <= 0) return null;
+  return rounds === 1 ? "1 Round" : `${rounds} Rounds`;
+}
+
 /**
- * Pausa entre paréntesis: "1'" → "(1' P)".
- * Si ya termina en P (como "s/P", sin pausa) no se agrega otra: "s/P" → "(s/P)".
+ * Pausa, como se escribe en el pizarrón ("c/" = con):
+ *   "2'" → "c/2' P"      "1'30''" → "c/1'30'' P"
+ * Si ya termina en P (como "s/P", sin pausa) va tal cual: "s/P" → "s/P".
  */
 export function formatRest(rest: string | null): string | null {
   const value = clean(rest);
   if (!value) return null;
-  return value.toUpperCase().endsWith("P") ? `(${value})` : `(${value} P)`;
-}
-
-/** Rondas: 3 + "R" → "x 3R"; 3 + "" → "x 3". */
-export function formatRounds(block: Pick<Block, "rounds" | "roundsSuffix">): string | null {
-  if (block.rounds === null || block.rounds <= 0) return null;
-  return `x ${block.rounds}${block.roundsSuffix.trim()}`;
+  return value.toUpperCase().endsWith("P") ? value : `c/${value} P`;
 }
 
 /**
- * Prescripción completa del bloque (lo que va a la derecha del corchete):
- *   rounds=3, rest="1'"                      → "x 3R (1' P)"
- *   rounds=4, rest="1'", note="(liviano)"    → "x 4R (1' P) (liviano)"
- *   prescriptionOverride="AMRAP 12'"         → "AMRAP 12'"
+ * Encabezado del bloque (lo que va junto a la letra, subrayado):
+ *   rounds=4, rest="2'"                 → "4 Rounds c/2' P"
+ *   rounds=3, rest="s/P"                → "3 Rounds s/P"
+ *   prescriptionOverride="O.T.M. / 6R"  → "O.T.M. / 6R"
+ * La nota del bloque NO va acá: el pizarrón la escribe aparte, en rojo.
  */
-export function formatBlockPrescription(
-  block: Pick<Block, "rounds" | "roundsSuffix" | "rest" | "note" | "prescriptionOverride">,
-): string {
+export function formatBlockHeading(block: Pick<Block, "rounds" | "rest" | "prescriptionOverride">): string {
   const override = clean(block.prescriptionOverride);
   if (override) return override;
 
-  return joinParts([formatRounds(block), formatRest(block.rest), clean(block.note)]);
-}
-
-/** Nombre del ejercicio con su nota: "RDL" + "(3:1)" → "RDL (3:1)". */
-export function formatExerciseName(exercise: Pick<BlockExercise, "name" | "note">): string {
-  return joinParts([clean(exercise.name), clean(exercise.note)]);
-}
-
-/**
- * ¿El bloque se escribe en una sola línea?
- * En el pizarrón, cuando un bloque tiene UN solo ejercicio, las reps y la
- * prescripción van juntas: "H.P. Clean ] 4 x 3R (1'30'' P)".
- */
-export function isSingleLineBlock(block: Pick<Block, "exercises">): boolean {
-  return block.exercises.length === 1;
-}
-
-/**
- * Texto a la derecha del corchete para un bloque de un solo ejercicio:
- * reps + prescripción.
- *   reps="4",     rounds=3, rest="1'30''"          → "4 x 3R (1'30'' P)"
- *   reps="4-2-1", rounds=3, suffix="", rest="2'"   → "4-2-1 x 3 (2' P)"
- */
-export function formatSingleLine(block: Block): string {
-  const reps = clean(block.exercises[0]?.reps);
-  return joinParts([reps, clean(formatBlockPrescription(block))]);
+  return joinParts([formatRounds(block.rounds), formatRest(block.rest)]);
 }

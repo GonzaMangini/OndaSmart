@@ -2,12 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   blockLabels,
   dayTitle,
-  formatBlockPrescription,
-  formatExerciseName,
+  formatBlockHeading,
   formatRest,
   formatRounds,
-  formatSingleLine,
-  isSingleLineBlock,
   normalizeQuotes,
 } from "./notation";
 import type { Block } from "./types";
@@ -45,7 +42,7 @@ describe("blockLabels", () => {
     expect(blockLabels([...blocks])).toEqual(["E/C", "A", "B", "C"]);
   });
 
-  it("el Día 3 del pizarrón llega hasta la G", () => {
+  it("el Día 3 del pizarrón de Performance llega hasta la G", () => {
     const blocks = [{ kind: "warmup" as const }, ...Array(7).fill({ kind: "main" as const })];
     expect(blockLabels(blocks).at(-1)).toBe("G");
   });
@@ -62,31 +59,42 @@ describe("blockLabels", () => {
 });
 
 describe("dayTitle", () => {
-  it("sin etiqueta muestra Día N (position arranca en 0)", () => {
+  it("sin título muestra Día N (position arranca en 0)", () => {
     expect(dayTitle({ position: 0, label: null })).toBe("Día 1");
   });
 
-  it("con etiqueta muestra la etiqueta", () => {
-    expect(dayTitle({ position: 0, label: "Lun/Jue" })).toBe("Lun/Jue");
+  it("con título muestra el título", () => {
+    expect(dayTitle({ position: 0, label: "Pecho + Tríceps" })).toBe("Pecho + Tríceps");
   });
 
-  it("una etiqueta en blanco cuenta como vacía", () => {
+  it("un título en blanco cuenta como vacío", () => {
     expect(dayTitle({ position: 2, label: "  " })).toBe("Día 3");
+  });
+});
+
+describe("formatRounds", () => {
+  it("plural y singular", () => {
+    expect(formatRounds(4)).toBe("4 Rounds");
+    expect(formatRounds(1)).toBe("1 Round");
+  });
+
+  it("sin rondas no muestra nada", () => {
+    expect(formatRounds(null)).toBeNull();
+    expect(formatRounds(0)).toBeNull();
   });
 });
 
 describe("formatRest", () => {
   it.each([
-    ["1'", "(1' P)"],
-    ["2'", "(2' P)"],
-    ["1'30''", "(1'30'' P)"],
-    ["30''", "(30'' P)"],
+    ["2'", "c/2' P"],
+    ["1'30''", "c/1'30'' P"],
+    ["30''", "c/30'' P"],
   ])("%s → %s", (rest, expected) => {
     expect(formatRest(rest)).toBe(expected);
   });
 
-  it("'s/P' (sin pausa) no lleva una P extra", () => {
-    expect(formatRest("s/P")).toBe("(s/P)");
+  it("'s/P' (sin pausa) va tal cual", () => {
+    expect(formatRest("s/P")).toBe("s/P");
   });
 
   it("vacío o null no muestra nada", () => {
@@ -95,97 +103,30 @@ describe("formatRest", () => {
   });
 });
 
-describe("formatRounds", () => {
-  it("con sufijo R", () => {
-    expect(formatRounds({ rounds: 3, roundsSuffix: "R" })).toBe("x 3R");
+describe("formatBlockHeading (casos del pizarrón de referencia)", () => {
+  it("bloque A: 4 Rounds c/2' P", () => {
+    expect(formatBlockHeading(block({ rounds: 4, rest: "2'" }))).toBe("4 Rounds c/2' P");
   });
 
-  it("sin sufijo, como en 4-2-1 x 3", () => {
-    expect(formatRounds({ rounds: 3, roundsSuffix: "" })).toBe("x 3");
+  it("E/C: 3 Rounds c/2' P", () => {
+    expect(formatBlockHeading(block({ kind: "warmup", rounds: 3, rest: "2'" }))).toBe("3 Rounds c/2' P");
   });
 
-  it("sin rondas no muestra nada", () => {
-    expect(formatRounds({ rounds: null, roundsSuffix: "R" })).toBeNull();
-  });
-});
-
-describe("formatBlockPrescription (casos reales del pizarrón)", () => {
-  it("Bloque A del Día 1: x 3R (1' P)", () => {
-    expect(formatBlockPrescription(block({ rounds: 3, rest: "1'" }))).toBe("x 3R (1' P)");
+  it("sin pausa: 3 Rounds s/P", () => {
+    expect(formatBlockHeading(block({ rounds: 3, rest: "s/P" }))).toBe("3 Rounds s/P");
   });
 
-  it("E/C sin pausa: x 3R (s/P)", () => {
-    expect(formatBlockPrescription(block({ rounds: 3, rest: "s/P" }))).toBe("x 3R (s/P)");
-  });
-
-  it("E/C del Día 2, sin pausa escrita: x 3R", () => {
-    expect(formatBlockPrescription(block({ rounds: 3 }))).toBe("x 3R");
-  });
-
-  it("Split Jerk con nota: x 4R (1' P) (liviano)", () => {
-    expect(formatBlockPrescription(block({ rounds: 4, rest: "1'", note: "(liviano)" }))).toBe(
-      "x 4R (1' P) (liviano)",
+  it("bloque C con texto libre: O.T.M. / 6R", () => {
+    expect(formatBlockHeading(block({ rounds: 3, rest: "1'", prescriptionOverride: "O.T.M. / 6R" }))).toBe(
+      "O.T.M. / 6R",
     );
   });
 
-  it("el texto libre (override) reemplaza todo lo demás", () => {
-    expect(
-      formatBlockPrescription(block({ rounds: 3, rest: "1'", prescriptionOverride: "AMRAP 12'" })),
-    ).toBe("AMRAP 12'");
+  it("la nota del bloque no va en el encabezado (se escribe aparte, en rojo)", () => {
+    expect(formatBlockHeading(block({ rounds: 4, rest: "2'", note: "Muy pesado!!!" }))).toBe("4 Rounds c/2' P");
   });
 
   it("un bloque sin nada cargado da texto vacío", () => {
-    expect(formatBlockPrescription(block())).toBe("");
-  });
-});
-
-describe("formatExerciseName", () => {
-  it("RDL con tempo: RDL (3:1)", () => {
-    expect(formatExerciseName({ name: "RDL", note: "(3:1)" })).toBe("RDL (3:1)");
-  });
-
-  it("sin nota queda solo el nombre", () => {
-    expect(formatExerciseName({ name: "H.P. Clean", note: null })).toBe("H.P. Clean");
-  });
-});
-
-describe("bloques de un solo ejercicio (reps y prescripción en la misma línea)", () => {
-  it("Bloque C del Día 1: H.P. Clean → 4 x 3R (1'30'' P)", () => {
-    const c = block({
-      rounds: 3,
-      rest: "1'30''",
-      exercises: [{ name: "H.P. Clean", reps: "4", note: null }],
-    });
-    expect(isSingleLineBlock(c)).toBe(true);
-    expect(formatSingleLine(c)).toBe("4 x 3R (1'30'' P)");
-  });
-
-  it("Bloque D del Día 3: H.P. Snatch → 4-2-1 x 3 (2' P)", () => {
-    const d = block({
-      rounds: 3,
-      roundsSuffix: "",
-      rest: "2'",
-      exercises: [{ name: "H.P. Snatch", reps: "4-2-1", note: null }],
-    });
-    expect(formatSingleLine(d)).toBe("4-2-1 x 3 (2' P)");
-  });
-
-  it("Bloque D del Día 1: Back Squats → 4 x 4R (2' P)", () => {
-    const d = block({
-      rounds: 4,
-      rest: "2'",
-      exercises: [{ name: "Back Squats", reps: "4", note: null }],
-    });
-    expect(formatSingleLine(d)).toBe("4 x 4R (2' P)");
-  });
-
-  it("un bloque con 2 ejercicios NO es de una línea", () => {
-    const a = block({
-      exercises: [
-        { name: "Polos cortos + altos", reps: "20", note: null },
-        { name: "Flex c/aplausos", reps: "4", note: null },
-      ],
-    });
-    expect(isSingleLineBlock(a)).toBe(false);
+    expect(formatBlockHeading(block())).toBe("");
   });
 });
