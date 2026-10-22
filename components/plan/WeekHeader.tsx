@@ -6,6 +6,7 @@
 import Link from "next/link";
 import type { Section } from "@/lib/data/board";
 import { addDays, formatWeekRange } from "@/lib/dates";
+import { CastButton } from "./CastButton";
 import { NewSectionForm } from "./NewSectionForm";
 import { SectionTitle } from "./SectionTitle";
 
@@ -55,15 +56,18 @@ export function WeekHeader({ sections, section, week, mode }: WeekHeaderProps) {
               Vista previa
             </Link>
           </nav>
-          {/* La versión para la tele (pública, semana actual). Se abre en otra pestaña. */}
-          <a
-            href={`/tv/${section.slug}`}
-            target="_blank"
-            rel="noopener"
-            className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand hover:bg-brand/10"
-          >
-            Pantalla TV ↗
-          </a>
+          {/* La versión para la tele (pública, semana actual): abrirla o transmitirla. */}
+          <div className="flex items-center">
+            <a
+              href={`/tv/${section.slug}`}
+              target="_blank"
+              rel="noopener"
+              className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand hover:bg-brand/10"
+            >
+              Pantalla TV ↗
+            </a>
+            <CastButton sectionSlug={section.slug} />
+          </div>
         </div>
 
         {/* Links reales (<a>): funcionan con teclado y, más adelante, con el control remoto. */}
