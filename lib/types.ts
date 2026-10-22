@@ -36,6 +36,8 @@ export interface Block {
 
 /** Una columna del pizarrón. */
 export interface Day {
+  /** id en la base (lo necesita el editor para saber qué día guardar). */
+  id: string;
   /** 0, 1, 2… (orden de la columna). */
   position: number;
   /** Etiqueta opcional ("Lun/Jue"); si es null se muestra "Día N". */

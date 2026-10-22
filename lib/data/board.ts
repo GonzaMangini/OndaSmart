@@ -44,7 +44,7 @@ export async function getWeekDays(sectionId: string, weekStart: string): Promise
     .select(
       `id,
        days (
-         position, label,
+         id, position, label,
          blocks (
            position, kind, rounds, rounds_suffix, rest, note, prescription_override,
            block_exercises ( position, reps, note, exercises ( name ) )

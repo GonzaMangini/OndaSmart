@@ -1,7 +1,4 @@
-// /plan → lleva a la semana actual de Performance.
-//
-// Por ahora va a la vista previa; cuando exista el editor (etapa 5)
-// va a llevar al editor.
+// /plan → lleva al editor de la semana actual de Performance.
 
 import { redirect } from "next/navigation";
 import { currentMonday } from "@/lib/dates";
@@ -11,5 +8,5 @@ import { currentMonday } from "@/lib/dates";
 export const dynamic = "force-dynamic";
 
 export default function PlanPage() {
-  redirect(`/plan/performance/${currentMonday()}/preview`);
+  redirect(`/plan/performance/${currentMonday()}`);
 }

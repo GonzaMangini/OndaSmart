@@ -30,6 +30,7 @@ export interface BlockRow {
 }
 
 export interface DayRow {
+  id: string;
   position: number;
   label: string | null;
   blocks: BlockRow[];
@@ -60,8 +61,43 @@ function toBlock(row: BlockRow): Block {
 
 export function toDays(rows: DayRow[]): Day[] {
   return byPosition(rows).map((day) => ({
+    id: day.id,
     position: day.position,
     label: day.label,
     blocks: byPosition(day.blocks).map(toBlock),
+  }));
+}
+
+// --- Conversión inversa: de la app a la base --------------------------------
+
+/** Un bloque en el formato que espera la función SQL save_day (ver 0002_save_day.sql). */
+export interface BlockPayload {
+  kind: Block["kind"];
+  rounds: number | null;
+  rounds_suffix: string;
+  rest: string | null;
+  note: string | null;
+  prescription_override: string | null;
+  exercises: { name: string; reps: string | null; note: string | null }[];
+}
+
+/**
+ * Bloques del editor → JSON para save_day. El orden del array ES el orden
+ * en el pizarrón (save_day asigna position 0, 1, 2… según llegan).
+ * Los campos de más que tenga el editor (como las `key` de React) se descartan.
+ */
+export function toSavePayload(blocks: Block[]): BlockPayload[] {
+  return blocks.map((block) => ({
+    kind: block.kind,
+    rounds: block.rounds,
+    rounds_suffix: block.roundsSuffix,
+    rest: block.rest,
+    note: block.note,
+    prescription_override: block.prescriptionOverride,
+    exercises: block.exercises.map((exercise) => ({
+      name: exercise.name,
+      reps: exercise.reps,
+      note: exercise.note,
+    })),
   }));
 }
