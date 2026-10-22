@@ -21,6 +21,22 @@ function joinParts(parts: (string | null)[]): string {
 }
 
 /**
+ * Normaliza las comillas de tiempo mientras el coach escribe.
+ * Los teclados del celular cambian solos ' por ’ y " por ”; el pizarrón usa
+ * siempre ' para minutos y '' para segundos:
+ *   "30”"  → "30''"      "1’30”" → "1'30''"      'a"b' → "a''b"
+ */
+export function normalizeQuotes(text: string): string {
+  return text.replace(/[’‘´`]/g, "'").replace(/[”“"]/g, "''");
+}
+
+/** Pausas más usadas: aparecen como botones rápidos en el editor. */
+export const REST_PRESETS = ["s/P", "30''", "45''", "1'", "1'30''", "2'", "3'"] as const;
+
+/** Símbolos difíciles de tipear en el celular: botones rápidos para el campo de reps. */
+export const REPS_SYMBOLS = ["''", "'", "/", "-", "x", " c/l"] as const;
+
+/**
  * Etiqueta de cada bloque de un día, en el mismo orden que `blocks`.
  * Los warmup son "E/C"; el resto recibe letras según su orden: A, B, C…
  * Las letras no se guardan en la base: si se reordena o borra un bloque,

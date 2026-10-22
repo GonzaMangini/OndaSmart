@@ -12,7 +12,11 @@ import { useAutosave, type SaveStatus } from "./useAutosave";
 import {
   addBlock,
   addExercise,
+  canMoveBlock,
+  duplicateBlock,
   hasWarmup,
+  moveBlock,
+  moveExercise,
   removeBlock,
   removeExercise,
   toEditorBlocks,
@@ -56,12 +60,19 @@ export function DayEditor({ day }: { day: Day }) {
           key={block.key}
           block={block}
           label={labels[index]}
+          canMoveUp={canMoveBlock(blocks, block.key, "up")}
+          canMoveDown={canMoveBlock(blocks, block.key, "down")}
           // `prev =>` usa siempre el estado más reciente, aunque haya varios cambios seguidos.
+          onMove={(direction) => setBlocks((prev) => moveBlock(prev, block.key, direction))}
           onChange={(patch) => setBlocks((prev) => updateBlock(prev, block.key, patch))}
+          onDuplicate={() => setBlocks((prev) => duplicateBlock(prev, block.key))}
           onRemove={() => setBlocks((prev) => removeBlock(prev, block.key))}
           onAddExercise={() => setBlocks((prev) => addExercise(prev, block.key))}
           onExerciseChange={(exerciseKey, patch) =>
             setBlocks((prev) => updateExercise(prev, block.key, exerciseKey, patch))
+          }
+          onMoveExercise={(exerciseKey, direction) =>
+            setBlocks((prev) => moveExercise(prev, block.key, exerciseKey, direction))
           }
           onRemoveExercise={(exerciseKey) =>
             setBlocks((prev) => removeExercise(prev, block.key, exerciseKey))

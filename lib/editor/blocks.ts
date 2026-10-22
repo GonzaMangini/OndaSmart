@@ -76,6 +76,53 @@ export function removeBlock(blocks: EditorBlock[], blockKey: string): EditorBloc
   return blocks.filter((block) => block.key !== blockKey);
 }
 
+/** Devuelve una copia del array con los elementos `from` y `to` intercambiados. */
+function swap<T>(items: T[], from: number, to: number): T[] {
+  const copy = [...items];
+  [copy[from], copy[to]] = [copy[to], copy[from]];
+  return copy;
+}
+
+export type Direction = "up" | "down";
+
+/**
+ * ¿Se puede mover este bloque? El E/C queda fijo arriba, y los bloques
+ * normales no pueden pasar por encima del E/C.
+ */
+export function canMoveBlock(blocks: EditorBlock[], blockKey: string, direction: Direction): boolean {
+  const index = blocks.findIndex((block) => block.key === blockKey);
+  if (index === -1 || blocks[index].kind === "warmup") return false;
+
+  const target = direction === "up" ? index - 1 : index + 1;
+  return target >= 0 && target < blocks.length && blocks[target].kind !== "warmup";
+}
+
+/** Mueve un bloque un lugar arriba o abajo (las letras se recalculan solas). */
+export function moveBlock(blocks: EditorBlock[], blockKey: string, direction: Direction): EditorBlock[] {
+  if (!canMoveBlock(blocks, blockKey, direction)) return blocks;
+  const index = blocks.findIndex((block) => block.key === blockKey);
+  return swap(blocks, index, direction === "up" ? index - 1 : index + 1);
+}
+
+/**
+ * Duplica un bloque y pone la copia justo debajo. La copia es siempre un
+ * bloque normal (no puede haber dos E/C). Lleva keys nuevas para que React
+ * la trate como filas distintas.
+ */
+export function duplicateBlock(blocks: EditorBlock[], blockKey: string): EditorBlock[] {
+  const index = blocks.findIndex((block) => block.key === blockKey);
+  if (index === -1) return blocks;
+
+  const original = blocks[index];
+  const copy: EditorBlock = {
+    ...original,
+    key: newKey(),
+    kind: "main",
+    exercises: original.exercises.map((exercise) => ({ ...exercise, key: newKey() })),
+  };
+  return [...blocks.slice(0, index + 1), copy, ...blocks.slice(index + 1)];
+}
+
 /** Cambia algunos campos de un bloque (`patch` = solo los campos que cambian). */
 export function updateBlock(
   blocks: EditorBlock[],
@@ -106,6 +153,21 @@ export function removeExercise(blocks: EditorBlock[], blockKey: string, exercise
   return mapExercises(blocks, blockKey, (exercises) =>
     exercises.filter((exercise) => exercise.key !== exerciseKey),
   );
+}
+
+/** Mueve un ejercicio un lugar arriba o abajo dentro de su bloque. */
+export function moveExercise(
+  blocks: EditorBlock[],
+  blockKey: string,
+  exerciseKey: string,
+  direction: Direction,
+): EditorBlock[] {
+  return mapExercises(blocks, blockKey, (exercises) => {
+    const index = exercises.findIndex((exercise) => exercise.key === exerciseKey);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (index === -1 || target < 0 || target >= exercises.length) return exercises;
+    return swap(exercises, index, target);
+  });
 }
 
 export function updateExercise(

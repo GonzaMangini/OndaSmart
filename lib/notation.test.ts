@@ -8,6 +8,7 @@ import {
   formatRounds,
   formatSingleLine,
   isSingleLineBlock,
+  normalizeQuotes,
 } from "./notation";
 import type { Block } from "./types";
 
@@ -24,6 +25,19 @@ function block(overrides: Partial<Block> = {}): Block {
     ...overrides,
   };
 }
+
+describe("normalizeQuotes", () => {
+  it.each([
+    ["30”", "30''"], // comilla curva del celular
+    ['30"', "30''"], // comilla doble común
+    ["1’30”", "1'30''"],
+    ["10’’/10’’", "10''/10''"],
+    ["1'30''", "1'30''"], // lo que ya está bien no cambia
+    ["4-2-1", "4-2-1"],
+  ])("%s → %s", (input, expected) => {
+    expect(normalizeQuotes(input)).toBe(expected);
+  });
+});
 
 describe("blockLabels", () => {
   it("el warmup es E/C y los demás van A, B, C… en orden", () => {
