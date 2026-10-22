@@ -55,6 +55,15 @@ export function WeekHeader({ sections, section, week, mode }: WeekHeaderProps) {
               Vista previa
             </Link>
           </nav>
+          {/* La versión para la tele (pública, semana actual). Se abre en otra pestaña. */}
+          <a
+            href={`/tv/${section.slug}`}
+            target="_blank"
+            rel="noopener"
+            className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand hover:bg-brand/10"
+          >
+            Pantalla TV ↗
+          </a>
         </div>
 
         {/* Links reales (<a>): funcionan con teclado y, más adelante, con el control remoto. */}
