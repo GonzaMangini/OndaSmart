@@ -6,7 +6,7 @@ y después se muestran en los televisores del gimnasio.
 ## Stack
 - **Next.js 15** (App Router) + **TypeScript**
 - **Tailwind CSS v4**
-- **Supabase** (Postgres + login) — a partir de la etapa 1
+- **Supabase** (Postgres + login): clientes en `lib/supabase/` (`client.ts` para el navegador, `server.ts` para el servidor) y renovación de sesión en `middleware.ts`
 - **Vitest** para tests
 - Deploy en **Vercel**
 
