@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+ * Colores base de la app como variables CSS.
+ * Tailwind v4 los toma desde el bloque @theme, así podemos usar clases
+ * como `bg-background`, `text-foreground` o `text-onda-red`.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  /* Rojo de las letras de bloque en el pizarrón (A, B, C…). */
+  --onda-red: #d72638;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-onda-red: var(--onda-red);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --onda-red: #ff4d5e;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
