@@ -10,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Planificador de rutinas de OndaCrossfit",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#d72638",
+    background_color: "#0e1115",
+    theme_color: "#0e1115",
     icons: [{ src: "/favicon.ico", sizes: "any", type: "image/x-icon" }],
   };
 }

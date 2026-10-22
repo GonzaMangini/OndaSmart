@@ -1,18 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
-// next/font descarga la fuente en el build y la sirve desde nuestro dominio
-// (sin pedidos a Google en cada visita). La exponemos como variable CSS
-// para usarla desde Tailwind (ver globals.css).
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// next/font descarga las fuentes en el build y las sirve desde nuestro dominio
+// (sin pedidos a Google en cada visita). Cada una queda expuesta como variable
+// CSS, que globals.css conecta con las clases de Tailwind `font-sans` y `font-display`.
+
+// Barlow: texto general. Pedimos solo los pesos que usamos para no cargar de más.
+const barlow = Barlow({
+  variable: "--font-barlow",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Barlow Condensed: títulos y textos del pizarrón, al estilo del "ONDA" del logo.
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-barlow-condensed",
   subsets: ["latin"],
+  weight: ["600", "700", "800"],
 });
 
 // Metadata: Next.js la convierte en etiquetas <title>, <meta>, etc.
@@ -25,11 +30,11 @@ export const metadata: Metadata = {
 };
 
 // El viewport se exporta aparte (requisito de Next.js 15).
-// themeColor pinta la barra del navegador en el celular.
+// themeColor pinta la barra del navegador en el celular con el fondo de la app.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#d72638",
+  themeColor: "#0e1115",
 };
 
 export default function RootLayout({
@@ -40,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="es-AR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${barlow.variable} ${barlowCondensed.variable} font-sans antialiased`}
       >
         {children}
       </body>
