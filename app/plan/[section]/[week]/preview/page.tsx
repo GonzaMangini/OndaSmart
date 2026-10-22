@@ -30,7 +30,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   const weekUrl = (monday: string) => `/plan/${section.slug}/${monday}/preview`;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1920px] flex-col gap-6 p-4 lg:p-8">
+    <main className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-6 p-4 lg:p-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-extrabold uppercase tracking-wide lg:text-4xl">
           {section.name}
