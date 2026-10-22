@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { WeekEditor } from "@/components/editor/WeekEditor";
 import { WeekHeader } from "@/components/plan/WeekHeader";
 import { createWeek } from "@/app/plan/actions";
-import { getSection, getWeekDays } from "@/lib/data/board";
+import { getSections, getWeekDays } from "@/lib/data/board";
 import { isMonday, isValidIsoDate } from "@/lib/dates";
 
 interface EditorPageProps {
@@ -19,14 +19,16 @@ export default async function EditorPage({ params }: EditorPageProps) {
 
   if (!isValidIsoDate(week) || !isMonday(week)) notFound();
 
-  const section = await getSection(sectionSlug);
+  // Traemos todas las pantallas (para las pestañas) y buscamos la actual entre ellas.
+  const sections = await getSections();
+  const section = sections.find((s) => s.slug === sectionSlug);
   if (!section) notFound();
 
   const days = await getWeekDays(section.id, week);
 
   return (
     <main className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-6 p-4 lg:p-8">
-      <WeekHeader sectionName={section.name} sectionSlug={section.slug} week={week} mode="edit" />
+      <WeekHeader sections={sections} section={section} week={week} mode="edit" />
 
       {days ? (
         // `key={week}`: al cambiar de semana, React crea un editor nuevo desde

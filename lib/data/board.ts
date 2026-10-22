@@ -14,20 +14,19 @@ export interface Section {
   columnCount: number;
 }
 
-/** Busca una sección por su slug ("performance"). Devuelve null si no existe. */
-export async function getSection(slug: string): Promise<Section | null> {
+/** Todas las secciones ("pantallas"), en el orden en que se muestran. */
+export async function getSections(): Promise<Section[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("sections")
     .select("id, name, slug, column_count")
-    .eq("slug", slug)
-    .maybeSingle(); // maybeSingle: 0 filas → null (single() tiraría error)
+    .order("sort_order")
+    .order("created_at"); // desempate si dos tienen el mismo sort_order
 
-  if (error) throw new Error(`No se pudo leer la sección: ${error.message}`);
-  if (!data) return null;
-
-  return { id: data.id, name: data.name, slug: data.slug, columnCount: data.column_count };
+  if (error) throw new Error(`No se pudieron leer las pantallas: ${error.message}`);
+  return data.map((row) => ({ id: row.id, name: row.name, slug: row.slug, columnCount: row.column_count }));
 }
+
 
 /**
  * Días (con bloques y ejercicios) de una semana de una sección.

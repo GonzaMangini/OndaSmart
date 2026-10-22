@@ -9,7 +9,7 @@
 import { notFound } from "next/navigation";
 import { BoardView } from "@/components/board/BoardView";
 import { WeekHeader } from "@/components/plan/WeekHeader";
-import { getSection, getWeekDays } from "@/lib/data/board";
+import { getSections, getWeekDays } from "@/lib/data/board";
 import { isMonday, isValidIsoDate } from "@/lib/dates";
 
 interface PreviewPageProps {
@@ -23,14 +23,16 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   // La URL la puede escribir cualquiera: validamos antes de ir a la base.
   if (!isValidIsoDate(week) || !isMonday(week)) notFound();
 
-  const section = await getSection(sectionSlug);
+  // Traemos todas las pantallas (para las pestañas) y buscamos la actual entre ellas.
+  const sections = await getSections();
+  const section = sections.find((s) => s.slug === sectionSlug);
   if (!section) notFound();
 
   const days = await getWeekDays(section.id, week);
 
   return (
     <main className="mx-auto flex w-full max-w-[1920px] flex-1 flex-col gap-6 p-4 lg:p-8">
-      <WeekHeader sectionName={section.name} sectionSlug={section.slug} week={week} mode="preview" />
+      <WeekHeader sections={sections} section={section} week={week} mode="preview" />
 
       {days ? (
         <BoardView days={days} />

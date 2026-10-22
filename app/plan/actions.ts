@@ -9,7 +9,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toSavePayload } from "@/lib/data/board-mapper";
-import { isMonday, isValidIsoDate } from "@/lib/dates";
+import { currentMonday, isMonday, isValidIsoDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import type { Block } from "@/lib/types";
 
@@ -48,4 +48,87 @@ export async function createWeek(sectionSlug: string, weekStart: string) {
   const path = `/plan/${sectionSlug}/${weekStart}`;
   revalidatePath(path);
   redirect(path);
+}
+
+// --- Pantallas (secciones) --------------------------------------------------
+
+export type SectionFormState = { error: string | null };
+
+const MAX_SECTION_NAME = 40;
+
+/** Valida el nombre de una pantalla. Devuelve el nombre limpio o un mensaje de error. */
+function validateSectionName(raw: FormDataEntryValue | null): { name: string } | { error: string } {
+  const name = String(raw ?? "").trim();
+  if (!name) return { error: "Escribí un nombre." };
+  if (name.length > MAX_SECTION_NAME) return { error: `Máximo ${MAX_SECTION_NAME} caracteres.` };
+  return { name };
+}
+
+/**
+ * Crea una pantalla nueva y lleva a su editor.
+ * Se usa con useActionState (por eso recibe el estado anterior y un FormData).
+ */
+export async function createSection(_prev: SectionFormState, formData: FormData): Promise<SectionFormState> {
+  const validated = validateSectionName(formData.get("name"));
+  if ("error" in validated) return validated;
+
+  const columns = Number(formData.get("columns"));
+  if (!Number.isInteger(columns) || columns < 1 || columns > 7) {
+    return { error: "Elegí entre 1 y 7 columnas." };
+  }
+
+  // Si estaba mirando una semana, abrimos esa misma semana en la pantalla nueva.
+  const week = String(formData.get("week") ?? "");
+  const targetWeek = isValidIsoDate(week) && isMonday(week) ? week : currentMonday();
+
+  const supabase = await createClient();
+  const { data: slug, error } = await supabase.rpc("create_section", {
+    p_name: validated.name,
+    p_column_count: columns,
+  });
+  if (error) {
+    console.error("create_section falló:", error);
+    return { error: "No se pudo crear la pantalla." };
+  }
+
+  // "layout": refresca todas las páginas bajo /plan (todas muestran las pestañas).
+  revalidatePath("/plan", "layout");
+  redirect(`/plan/${slug}/${targetWeek}`);
+}
+
+/** Cambia el nombre visible de una pantalla. El slug (la URL) no cambia. */
+export async function renameSection(sectionId: string, rawName: string): Promise<SaveResult> {
+  const validated = validateSectionName(rawName);
+  if ("error" in validated) return { ok: false, error: validated.error };
+
+  const supabase = await createClient();
+  // .select() hace que Supabase devuelva las filas cambiadas: si RLS no dejó
+  // cambiar nada, vuelve vacío en vez de dar error, y así nos damos cuenta.
+  const { data, error } = await supabase
+    .from("sections")
+    .update({ name: validated.name })
+    .eq("id", sectionId)
+    .select("id");
+
+  if (error || data.length === 0) {
+    console.error("renameSection falló:", error);
+    return { ok: false, error: "No se pudo renombrar." };
+  }
+
+  revalidatePath("/plan", "layout");
+  return { ok: true };
+}
+
+/** Borra una pantalla CON todas sus semanas y rutinas (en cascada). */
+export async function deleteSection(sectionId: string): Promise<SaveResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("sections").delete().eq("id", sectionId).select("id");
+
+  if (error || data.length === 0) {
+    console.error("deleteSection falló:", error);
+    return { ok: false, error: "No se pudo eliminar la pantalla." };
+  }
+
+  revalidatePath("/plan", "layout");
+  redirect("/plan");
 }
